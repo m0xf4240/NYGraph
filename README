@@ -1,0 +1,8 @@
+Here's the new programming assignment, due on Nov. 22, right before Thanksgiving break.  You can work with a partner if you'd like.
+
+Five College students, please note that we don't have classes at all on Thanksgiving week.  COSC 301 will also not meet on Thursday, November 14.
+
+Your task is to implement two versions of Dijkstra's algorithm, one that works in the usual way, and one that searches from both ends. We've talked about the two-directional search in class.  You'll need to implement a heap as part of your work, because the PriorityQueue class in the Java API doesn't support decreaseKey operations.
+
+An input graph with 260,000 vertices is available in ~lamcgeoch/NY.gr on remus/romulus.  Do a number of trials of both algorithms, seeking paths between randomly chosen endpoints.  Use the same set of endpoints for both algorithms, and report both the time and the number of vertices that are enqueued during the search.
+I'll update the website right away with the NY.gr graph and a smaller one.  I'll post another file, too, with the geographic coordinates for the NY graph, in case you're curious.  I've got bigger graphs, too, which I can post if you'd like.
