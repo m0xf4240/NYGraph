@@ -36,9 +36,41 @@ public class Driver{
 		}
 		br.close();
 		print(graph);
+		
+		dijkstra();
 	}
 	
-	
+	public void dijkstra(){
+		//state: -1,unvisited | 0,enqueued | 1 done
+		H = new Heap();
+		for all (v){
+			v.state=-1;
+		}
+		v0.state=0;
+		v0.dist=0;
+		v0.via=null;
+		H.enqueue(v0);
+		
+		while(!H.isEmpty()){
+			v=H.deleteMin();
+			for (Node w: v.getNeighbors()){
+				if (w.getState() == -1){
+					w.setState(0);
+					w.setDist(v.getDist()+dist(v,w));
+					w.setVia(v);
+					H.enqueue(w);
+				} else if (w.getState() == 0){
+					int newDist = v.getDist()+dist(v,w);
+					if (newDist < w.getDist()){
+						w.setDist(newDist);
+						w.setVia(v);
+						H.decreaseKey(w);
+					}
+				}
+			}
+			v.setState(1);
+		}
+	}
 	
 	public void print(HashMap<Integer,ArrayList<Tuple<Integer,Integer>>> g){
 		Set<Integer> keys = g.keySet();
