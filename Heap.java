@@ -3,17 +3,17 @@ import java.util.ArrayList;
 
 //Heap
 public class Heap{
-// ===============================================================================================================================================================
-// This is a minheap for dijkstra's algorithm to solve optimum path between two specified nodes
+	// ===============================================================================================================================================================
+	// This is a minheap for dijkstra's algorithm to solve optimum path between two specified nodes
 	// ===========================================================================================================================================================
 	// Node
 	// ===========================================================================================================================================================
 	// Private inner class Node stores the information about each city and pointers which effect the heap
 	public class Node{
 		// =======================================================================================================================================================
-		
-		
-		
+
+
+
 		// =======================================================================================================================================================
 		private City city;
 		private Node left;
@@ -49,42 +49,44 @@ public class Heap{
 			this.right=r;
 			this.parent=p;
 		} // init
-		
+
 		private int getName(){
 			return this.city.getName();
 		}
-		
+
 		private int getDist(){
 			return this.city.getDist();
 		}
-		
+
 		public String toString(){
 			return "["+getName()+", "+getDist()+"| " +
 					"parent="+this.parent.getName()+
 					", left="+this.left.getName()+
 					", right="+this.right.getName()+"]";
 		}
-		
+
 		// =======================================================================================================================================================
 	} // class Node
 	// ===========================================================================================================================================================
-	
-	
-	
+
+
+
 	// ===========================================================================================================================================================
 	private Node header;
 	private Node last;
 	private ArrayList<Node> nodeList=new ArrayList<Node>();
+	private boolean debug;
 	// ===========================================================================================================================================================
 
-	
-	
+
+
 	// ===========================================================================================
 	// Constructor
 	/**
 	 * Initialize the Heap to have only a header Node.
 	 */
-	public Heap(){
+	public Heap(boolean debug){
+		this.debug=debug;
 		header=new Node(new City(-1,Integer.MAX_VALUE));
 		header.init(header, header, header);
 		this.last=header;
@@ -102,18 +104,32 @@ public class Heap{
 	 * @return A pointer to the Node just added, which is the last Node in the Heap
 	 */
 	public Node addNode(City city){
+		if (debug){
+			System.out.println("\t\tAdding "+city);
+		}
 		Node n=new Node(city);
-		n.init(header,header,header);
-		n.parent=findNext();
+		n.init(header,header,findNext());
+		if (debug){
+			System.out.println("\t\t"+city+" is now a child of "+n.parent);
+		}
 		if (n.parent.left==header){
-			n.parent.left=n;
+			n.parent.init(n, n.parent.right, n.parent.parent);
 		}else{
-			n.parent.right=n;
+			n.parent.init(n.parent.left, n, n.parent.parent);
 		}
 		this.last=n;
 		nodeList.add(last);
-		siftUp(last);
-		return last;
+		if (debug){
+			System.out.println("\t\tThe (broken) heap looks like");
+			this.print();
+		}
+		siftUp(n);
+		if (debug){
+			System.out.println("\t\tAfter siftin my heap is");
+			this.print();
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+		}
+		return n;
 	} // addNode
 	// ===========================================================================================================================================================
 
@@ -126,40 +142,98 @@ public class Heap{
 	 * @return The mimimum Node in the Heap
 	 */
 	public City deleteMin(){
-		Node toReturn=this.header.left;
-		// remove the min Node from Heap's list of all nodes
-		nodeList.remove(toReturn);
-		// restructure the Heap
+		if (debug){
+			System.out.println("\t\t\t\tStarting Delete Min");
+		}
+		Node min=this.header.left;
+		if (debug){
+			System.out.println("About to pop "+min+" off the heap");
+		}
 		Node l=this.last;
 		Node secondToLast=findPrev();
-		System.out.println(nodeList);
-		if (nodeList.size()==1){
-			System.out.println("Catching size==2");
-			secondToLast=last;
+
+		if (debug){
+			System.out.println("Last is "+l);
+			System.out.println("secondToLast is "+secondToLast);
 		}
-		System.out.println("Min is "+header.left);
-		System.out.println("Last is "+last);
-		System.out.println("new last will be "+secondToLast);
-		if (toReturn==l){
+
+		// remove the min Node from Heap's list of all nodes
+		nodeList.remove(min);
+		if (debug){
+			System.out.println("The list nodes in our heap is "+nodeList);
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+		}
+
+		// restructure the Heap
+		// first use findPrev to find the secondToLast Node in the heap.
+		// Then move last to the root of the heap. The heap might be invalid, so
+		// begin siftDown to fix it. After siftDown, secondToLast is probably in 
+		// the last position, unless it swapped with the "last/min" node as it
+		// was sifting down, in which case the old last is still the new last
+
+		if (min==l){
 			header.init(header, header, header);
 		} else {
-			header.init(l, header, header);
-			Node newRight=(toReturn.right==l)?header:toReturn.right;
-			Node newLeft=(toReturn.left==l)?header:toReturn.left;
-			l.init(newLeft, newRight, header);
-			if (toReturn.left!=l && toReturn.left!=header){		
-				toReturn.left.init(toReturn.left.left, toReturn.left.right, l);
-			}
-			if (toReturn.right!=l && toReturn.right!=header){
-				toReturn.right.init(toReturn.right.left, toReturn.right.right, l);
+			if (debug){
+				System.out.println("About to restructure heap");
 			}
 			
-			System.out.println("About to siftDown");
-			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+			header.init(l, header, header);
+			//newRight and newLeft are the second row
+			Node newRight=(min.right==l)?header:min.right;
+			Node newLeft=(min.left==l)?header:min.left;			
+			
+			Node newLeftsLeft=(min.left.left==l)?header:min.left.left;
+			Node newLeftsRight=(min.left.right==l)?header:min.left.right;
+			Node newRightsLeft=(min.right.left==l)?header:min.right.left;
+			Node newRightsRight=(min.right.right==l)?header:min.right.right;
+			
+			if (l.parent.left==l){
+				l.parent.init(header, header, l.parent.parent);
+			} else {
+				l.parent.init(l.parent.left, header, l.parent.parent);
+			}
+			
+			l.init(newLeft, newRight, header);
+			if (min.left!=l && min.left!=header){		
+				min.left.init(newLeftsLeft,newLeftsRight,l);
+			}
+			if (min.right!=l && min.right!=header){
+				min.right.init(newRightsLeft,newRightsRight,l);
+			}
+
+			if (debug){
+				System.out.println("Everything we just did is in");
+				System.out.println(header);
+			}
+			if (debug){
+				for (Node n:nodeList){
+					if (n==last){System.out.print("*");}
+					System.out.println(n);
+				}
+			}
+			if (debug){
+				System.out.println("About to siftDown");
+			}
+
+			if (debug){
+				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+			}
 			siftDown(this.header.left);
+			if (debug){
+				System.out.println("      last is "+last);
+			}
 		}
-		this.last=secondToLast;
-		return toReturn.city;
+		// 
+		if (secondToLast.left==header){ //if secondToLast has no children
+			this.last=secondToLast;
+		}
+		if (debug){
+			System.out.println("      last is "+last);
+			System.out.println("The heap is");
+			this.print();
+		}
+		return min.city;
 	} // removeMin
 	// ===========================================================================================================================================================
 
@@ -199,6 +273,9 @@ public class Heap{
 	 * @return The second to last Node in the Heap.
 	 */
 	public Node findPrev(){
+		if (debug){
+			System.out.println("\t\t\t\t\tFinding thing to call last");
+		}
 		if (last.parent==header){
 			return header;
 		} else if (last.parent.right==last){
@@ -206,7 +283,16 @@ public class Heap{
 		} else{
 			Node p=last;
 			while(p.parent.left==p){
+				if (debug){
+					System.out.println("\t\t\t\t\twhile| p is "+p);
+				}
+				if (p.parent==header){
+					break;
+				}
 				p=p.parent;
+			}
+			if (debug){
+				System.out.println("\t\t\t\t\tfinally| p is "+p);
 			}
 			if (p.parent!=header){
 				p=p.parent.left;
@@ -214,6 +300,11 @@ public class Heap{
 			while(p.right!=header){
 				p=p.right;
 			}
+			if (debug){
+				System.out.println("\t\t\t\t\tmoving right");
+				System.out.println("\t\t\t\t\tfinally| p is "+p);
+			}
+
 			return p;
 		}
 	} // findPrev
@@ -227,6 +318,10 @@ public class Heap{
 	 * @param n The Node to swap.
 	 */
 	public void siftDown(Node n){
+		if (debug){
+			System.out.println("The (broken) heap looks like ");
+			this.print();
+		}
 		if (n.left==header){
 			return;
 		} else {
@@ -240,6 +335,9 @@ public class Heap{
 				swap(n.right,n);
 			}
 			siftDown(n);
+			if (debug){
+				System.out.println("      last is "+last);
+			}
 		}
 	} // siftDown
 	// ===========================================================================================================================================================
@@ -249,6 +347,7 @@ public class Heap{
 	// ===========================================================================================================================================================
 	public void decreaseKey(City c){
 		//TODO: Make this code nice
+
 		Node t=header.left;
 		for (Node n: nodeList){
 			if (c.getName()==n.getName()){
@@ -258,17 +357,23 @@ public class Heap{
 		}
 		siftUp(t);
 	}
-	
+
 	/**
 	 * Swaps a Node with its parent until the Heap is valid.
 	 * @param n The Node to swap.
 	 */
 	public void siftUp(Node n){
+		if (debug){
+			System.out.println("\t\t\tSifting up on "+n+"^^"+n.parent);
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+		}
 		if ((n.parent==header) || n.getDist()>n.parent.getDist()){
 			return;
 		} else {
-			swap(n,n.parent);
-			
+			if (debug){
+				System.out.println("\t\t\tAbout to swap");
+			}
+			swap(n,n.parent);			
 			siftUp(n);
 		}
 		header.init(header.left, header, header);
@@ -286,18 +391,20 @@ public class Heap{
 	 * are written, but it would be rigorous.
 	 */
 	public void swap(Node n, Node np){
-		//TODO: use init()
+		if (debug){
+			System.out.println("   about to swap "+n.getName()+" and "+np.getName());
+		}
+		//n will never be last when sifting down
 		if (n==last){
 			last=n.parent;
 		}
-		
+
 		Node nleft=n.left;
 		Node nright=n.right;
-		Node nparent=n.parent;
 		Node npleft=np.left;
 		Node npright=np.right;
 		Node npparent=np.parent;
-		
+
 		if (np.left==n){
 			n.init(np, npright, npparent);
 			np.init(nleft, nright, n);
@@ -322,57 +429,26 @@ public class Heap{
 		if (np.right!=header){
 			np.right.init(np.right.left, np.right.right, np);
 		}
-		int i=7;
-		
-		/*if (np.left==n){
-			(np.left=n.left).parent=np;
-
-			n.parent=np.parent;
-			if (n.parent.left==np){
-				n.parent.left=n;
-			} else{
-				n.parent.right=n;
-			}
-			np.parent=n;
-			n.left=np;
-
-			Node s=n.right;		
-			(n.right=np.right).parent=n;
-			(np.right=s).parent=np;
-		} else{
-			(np.right=n.right).parent=np;
-
-			n.parent=np.parent;
-			if (n.parent.left==np){
-				n.parent.left=n;
-			} else{
-				n.parent.right=n;
-			}
-			np.parent=n;
-			n.right=np;
-
-			Node s=n.left;		
-			(n.left=np.left).parent=n;
-			(np.left=s).parent=np;
-		}*/
 	} //swap
 	// ===========================================================================================================================================================
-	
-	
+
+
 	// ===
 
 	public boolean isEmpty(){
 		return header.left==header;
 	}
-	
+
 	public void print(){
+		System.out.println(header);
 		if (this.isEmpty()){
-			System.out.println("Empty");
+			return;
 		} else{
 			print(header.left);
 		}
+		System.out.println("*"+last+" is marked as last");
 	}
-	
+
 	public void print(Node n){
 		if (n==header){
 			return;
