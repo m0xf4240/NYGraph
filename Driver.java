@@ -12,7 +12,7 @@ import java.util.*;
 public class Driver{
 	// ===============================================================================================================================================================
 
-	boolean debug=false;
+	boolean debug=true;
 	boolean buildDebug=false;
 	boolean bwDebugVerbose=false;
 	boolean bwDebugSparse=true;
@@ -107,7 +107,9 @@ public class Driver{
 		System.out.println("Loaded "+keySet.size()+" cities.");
 		ArrayList<City> cityList= new ArrayList<City>(keySet.size());
 		for (Integer i:graph.keySet()){
-			cityList.add(new City(i,-1));
+			cityList.add(new City(i,Integer.MAX_VALUE));
+			City a = cityList.get(cityList.size()-1);
+			a.setStateFromEnd(Integer.MAX_VALUE);
 		}
 
 		Collections.sort(cityList, new Comparator<City>() {
@@ -135,7 +137,7 @@ public class Driver{
 				System.out.println("*************************");
 			}
 		}
-*/
+		 */
 		// ************************
 		
 		System.out.println("===============================================================");
@@ -178,7 +180,12 @@ public class Driver{
 				System.out.println("Force quiting.");
 				return;
 			}
-			printPath(e);
+			postPrintPath(e);
+			prePrintPath(e);
+			
+			for (City c:cityList){
+				System.out.println(c);
+			}			
 			
 			//reset cityList
 			for (City c:cityList){
@@ -217,34 +224,41 @@ public class Driver{
 	} // go
 	// ===========================================================================================================================================================
 
-
+	
 
 	// ===========================================================================================================================================================
 	/**
-	 * Solve the optimization problem using dijkstra's algorithm
-	 * @throws IOException 
+	 * Solve the optimization problem using dijkstra's algorithm in one direction from start to end
+	 * @param startCityName
+	 * @param endCityName
+	 * @param graph
+	 * @param cityList
+	 * @return endCity
+	 * @throws IOException
 	 */
 	public City dijkstra(int startCityName, int endCityName, HashMap<Integer,ArrayList<Tuple<Integer,Integer>>> graph, ArrayList<City> cityList) throws IOException{
-
-		File output = new File("log.txt");
-		if (!output.exists()) {
-			output.createNewFile();
-		}
-		FileWriter fw = new FileWriter(output.getAbsoluteFile());
-		BufferedWriter bw = new BufferedWriter(fw);
-		
 		
 		Heap h= new Heap(debug);
+		if(debug){
+			System.out.println("Adding startCity");
+		}
 		City startCity = cityList.get(startCityName-1);
 		startCity.setState(0); //mark as enqueued
 		startCity.setDist(0); //set distance to 0
 		//default via is null
+		if(debug){
+			System.out.println("Adding endCity");
+		}
 		h.addNode(startCity); //enheap
+		City endCity = cityList.get(endCityName-1);
+		endCity.setStateFromEnd(0);
+		endCity.setDistFromEnd(0); //set distance to 0
+		//default via is null
+		h.addNode(endCity); //enheap
 
 		//state: -1,unvisited | 0,enqueued | 1 done
 		while(!h.isEmpty()){
 			//h.print();
-			
 			if(!h.validate()){
 				System.out.println("The broken heap is");
 				h.safePrint();
@@ -253,7 +267,6 @@ public class Driver{
 					System.out.println(c);
 				}
 				System.out.println("Leaving.");
-				bw.close();
 				return null;
 			}
 			
@@ -264,29 +277,12 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 			
-			
-			
-			if (bwDebugVerbose){
-				bw.write("---------------------------------------------------------------\n");
-				ArrayList<City> heapList=h.getCityList();
-				Collections.sort(cityList, new Comparator<City>() {
-					public int compare(City a, City b) {
-						return Integer.signum(a.getDist() - b.getDist());
-					}
-				});
-				bw.write("The heap is"+heapList+"\n");
-			}
 			City d=h.getMin();
 			if (d.getName()==problemCity){
 				h.setDebug(true);
 			}
 			City v = h.deleteMin();
-	
-			if (bwDebugSparse){
-				bw.newLine();
-				bw.write("---------------------------------------------------------------\n");
-				bw.write("Looking at "+v.toString()+"\n");
-			}
+			String dir=v.whichWay();
 			if (debug){
 				System.out.println("Just popped "+v+" off the heap. The heap looks like");
 				h.print();
@@ -301,60 +297,55 @@ public class Driver{
 				System.out.println("Neighbors are");
 				for (Tuple<Integer,Integer> t:neighbors){
 					System.out.println(cityList.get(t.getFirst()-1));
-				}
-				
-			}
-			if (bwDebugSparse){
-				bw.write(neighbors.toString()+"\n");
-			}
-			if (debug){
+				}				
 				System.out.println("City "+v.getName()+" has "+neighbors.size()+" neighbors");
 			}
+
 			for (Tuple<Integer, Integer> n:neighbors){
 				City w=cityList.get(n.getFirst()-1);
 				if (debug){
 					try {System.in.read();} catch (IOException e) {e.printStackTrace();}
-					System.out.println("\tLooking at neighbor "+w);
+					System.out.println("\tLooking at neighbor "+w+" in direction "+dir);
+					System.out.println("\tv is "+v);
 				}
-				if (w.getState() == -1){
-					if(debug){
-						System.out.println("\tAbout to add "+w+" to heap");
-					}
-					w.setState(0);
-					w.setDist(v.getDist()+n.getSecond());
-					w.setVia(v);
-					if (bwDebugSparse){
-						bw.write("\tAdding "+w.toString()+" ");
-					}
-					if (bwDebugVerbose){
-						bw.write("\t---------------------------------------------------------------"+"\n");
-						bw.write("\tAdding "+w.toString()+"\n");
-					}
-					if(debug){
-						System.out.println("\tInitialized "+w);
-						try {System.in.read();} catch (IOException e) {e.printStackTrace();}
-					}
-					h.addNode(w); //enheap
-					if(debug){
-						System.out.println("\tAdded "+w+" to heap. The heap looks like");
-						h.print();
-					}
-
-				} else if (w.getState() == 0){
-					int newDist=v.getDist()+n.getSecond();
-					if (newDist<w.getDist()){
-						w.setDist(newDist);
+				if (dir.equals("start")){
+					if (w.getState()==-1){
+						w.setState(0);
+						w.setDist(v.getDist()+n.getSecond());
 						w.setVia(v);
-						h.decreaseKey(w);
+						if (!h.contains(w)){
+							h.addNode(w); //enheap
+						} else {
+							h.decreaseKey(w);
+						}
+					} else if (w.getState() == 0){
+						int newDist=v.getDist()+n.getSecond();
+						if (newDist<w.getDist()){
+							w.setDist(newDist);
+							w.setVia(v);
+							h.decreaseKey(w);
+						}
 					}
-					if (bwDebugSparse){
-						bw.write("\tUpdating "+w.toString()+" ");
-					}
-					if (bwDebugVerbose){
-						bw.write("\t---------------------------------------------------------------"+"\n");
-						bw.write("\tUpdating "+w.toString()+"\n");
+				} else {
+					if (w.getStateFromEnd()==-1 && v.getStateFromEnd()==0){
+						w.setStateFromEnd(0);
+						w.setDistFromEnd(v.getDistFromEnd()+n.getSecond());
+						w.setViaFromEnd(v);
+						if (!h.contains(w)){
+							h.addNode(w); //enheap
+						} else {
+							h.decreaseKey(w);
+						}
+					} else if (w.getStateFromEnd() == 0){
+						int newDistFromEnd=v.getDistFromEnd()+n.getSecond();
+						if (newDistFromEnd<w.getDistFromEnd()){
+							w.setDistFromEnd(newDistFromEnd);
+							w.setViaFromEnd(v);
+							h.decreaseKey(w);
+						}
 					}
 				}
+				
 				if(debug){
 					System.out.println("Done with the for loop");
 					System.out.println("neighbors is "+neighbors);
@@ -365,38 +356,67 @@ public class Driver{
 				System.out.println("Setting v="+v.getName()+" to done");
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
-			v.setState(1);
-			if (bwDebugSparse){
-				bw.write("---------------------------------------------------------------"+"\n");
-				bw.write("Done with "+v.toString()+"\n");
+			if (dir.equals("start")){
+				v.setState(1);
+				if (v.getStateFromEnd()==0){
+					h.addNode(v);
+				}
+				if (v.getStateFromEnd()==1){
+					return search(h,v);
+				}
+			} else {
+				v.setStateFromEnd(1);
+				if (v.getState()==0){
+					h.addNode(v);
+				}
+				if (v.getState()==1){
+					return search(h,v);
+				}
 			}
-			if (v.getName()==endCityName){
-				bw.close();
-				return v;
-			}
+			
 			if(debug){
 				System.out.println("Bottom of the while loop and our heap looks like ");
 				h.print();
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
-			bw.flush();
+	
 		}
-		
-		bw.close();
 		return null;
-	} //dijkstra
-	// ===========================================================================================================================================================
-
-
-
-	// ===========================================================================================================================================================
-
-	public void printPath(City e){
+	}
+	
+	public City search(Heap h, City v){
+		ArrayList<City> cityList=h.getCityList();
+		for (City c:cityList){
+			if (c.getState()==-1 || c.getStateFromEnd()==-1){
+				cityList.remove(c);
+			} else if (c.getState()==0 && c.getStateFromEnd()==0){
+				cityList.remove(c);
+			}
+		}
+		for (City c:cityList){
+			if ((c.getDist()+c.getDistFromEnd())<(v.getDist()+v.getDistFromEnd())){
+				v=c;
+			}
+		}
+		return v;
+	}
+	
+	
+	public void prePrintPath(City e){
+		if (e.getViaFromEnd() == null){
+			System.out.println(e);
+			return;
+		}
+		System.out.println(e);
+		prePrintPath(e.getViaFromEnd());
+	}
+	
+	public void postPrintPath(City e){
 		if (e.getVia() == null){
 			System.out.println(e);
 			return;
 		}
-		printPath(e.getVia());
+		postPrintPath(e.getVia());
 		System.out.println(e);
 	}
 

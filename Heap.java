@@ -57,7 +57,12 @@ public class Heap{
 		}
 
 		private int getDist(){
-			return this.city.getDist();
+			if(this.city.getState()==1){
+				return this.city.getDistFromEnd();
+			} else if (this.city.getStateFromEnd()==1){
+				return this.city.getDist();
+			}
+			return Math.min(this.city.getDist(), this.city.getDistFromEnd());
 		}
 
 		public String toString(){
@@ -478,7 +483,14 @@ public class Heap{
 	} // getCityList
 	// ===========================================================================================================================================================
 	
-	
+	public boolean contains(City c){
+		for (Node n:nodeList){
+			if (n.city==c){
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	// ===========================================================================================================================================================
 	/**
@@ -567,7 +579,7 @@ public class Heap{
 		if (this.isEmpty()){
 			return;
 		} else{
-			print(header.left);
+			print(header.left, 0);
 		}
 		System.out.println("*"+last+" is marked as last");
 	} // print
@@ -580,13 +592,14 @@ public class Heap{
 	 * Private recursive method to print the heap pre-order.
 	 * @param n
 	 */
-	private void print(Node n){
+	private void print(Node n, int level){
 		if (n==header){
 			return;
 		}
+		
 		System.out.println(n);
-		print(n.left);
-		print(n.right);
+		print(n.left, level+1);
+		print(n.right, level+1);
 	} // print
 	// ===========================================================================================================================================================
 } // class Heap
