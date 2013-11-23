@@ -14,6 +14,8 @@ public class Driver{
 
 	boolean debug=false;
 	boolean buildDebug=false;
+	boolean bwDebugVerbose=false;
+	boolean bwDebugSparse=true;
 
 	// ===========================================================================================================================================================
 	// main method switches to a non-static method
@@ -244,12 +246,22 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 
-			bw.write("---------------------------------------------------------------\n");
-			bw.write("The heap is"+h.getCityList()+"\n");
-			
+			if (bwDebugVerbose){
+				bw.write("---------------------------------------------------------------\n");
+				ArrayList<City> heapList=h.getCityList();
+				Collections.sort(cityList, new Comparator<City>() {
+					public int compare(City a, City b) {
+						return Integer.signum(a.getDist() - b.getDist());
+					}
+				});
+				bw.write("The heap is"+heapList+"\n");
+			}
 			City v = h.deleteMin();		
-			bw.write("---------------------------------------------------------------\n");
-			bw.write("Looking at "+v.toString()+"\n");
+			if (bwDebugSparse){
+				bw.newLine();
+				bw.write("---------------------------------------------------------------\n");
+				bw.write("Looking at "+v.toString()+"\n");
+			}
 			if (debug){
 				System.out.println("Just popped "+v+" off the heap. The heap looks like");
 				h.print();
@@ -272,8 +284,13 @@ public class Driver{
 					w.setState(0);
 					w.setDist(v.getDist()+n.getSecond());
 					w.setVia(v);
-					bw.write("\t---------------------------------------------------------------"+"\n");
-					bw.write("\tAdding "+w.toString()+"\n");
+					if (bwDebugSparse){
+						bw.write("\tAdding "+w.toString()+" ");
+					}
+					if (bwDebugVerbose){
+						bw.write("\t---------------------------------------------------------------"+"\n");
+						bw.write("\tAdding "+w.toString()+"\n");
+					}
 					if(debug){
 						System.out.println("\tInitialized "+w);
 						try {System.in.read();} catch (IOException e) {e.printStackTrace();}
@@ -291,8 +308,13 @@ public class Driver{
 						w.setVia(v);
 						h.decreaseKey(w);
 					}
-					bw.write("\t---------------------------------------------------------------"+"\n");
-					bw.write("\tUpdating "+w.toString()+"\n");
+					if (bwDebugSparse){
+						bw.write("\tUpdating "+w.toString()+" ");
+					}
+					if (bwDebugVerbose){
+						bw.write("\t---------------------------------------------------------------"+"\n");
+						bw.write("\tUpdating "+w.toString()+"\n");
+					}
 				}
 				if(debug){
 					System.out.println("Done with the for loop");
@@ -305,9 +327,12 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 			v.setState(1);
-			bw.write("---------------------------------------------------------------"+"\n");
-			bw.write("Done with "+v.toString()+"\n");
+			if (bwDebugSparse){
+				bw.write("---------------------------------------------------------------"+"\n");
+				bw.write("Done with "+v.toString()+"\n");
+			}
 			if (v.getName()==endCityName){
+				bw.close();
 				return v;
 			}
 			if(debug){
@@ -315,6 +340,7 @@ public class Driver{
 				h.print();
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
+			bw.flush();
 		}
 		
 		bw.close();

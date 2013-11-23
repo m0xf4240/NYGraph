@@ -373,6 +373,9 @@ public class Heap{
 			if (debug){
 				System.out.println("\t\t\tAbout to swap");
 			}
+			if (last==n) {
+				last=n.parent;
+			}
 			swap(n,n.parent);			
 			siftUp(n);
 		}
