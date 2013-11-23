@@ -81,6 +81,7 @@ public class City{
 	 * toString
 	 */
 	public String toString(){
-		return "["+this.name+", "+this.state+"]";
+		String viaName=(this.via==null)?"NA":""+this.via.getName();
+		return "["+this.name+": state="+this.state+", dist="+this.dist+", via="+viaName+"]";
 	}
 } // class Node

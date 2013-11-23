@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.util.ArrayList;
+
 //Heap
 public class Heap{
 // ===============================================================================================================================================================
@@ -51,7 +54,16 @@ public class Heap{
 			return this.city.getName();
 		}
 		
+		private int getDist(){
+			return this.city.getDist();
+		}
 		
+		public String toString(){
+			return "["+getName()+", "+getDist()+"| " +
+					"parent="+this.parent.getName()+
+					", left="+this.left.getName()+
+					", right="+this.right.getName()+"]";
+		}
 		
 		// =======================================================================================================================================================
 	} // class Node
@@ -62,6 +74,7 @@ public class Heap{
 	// ===========================================================================================================================================================
 	private Node header;
 	private Node last;
+	private ArrayList<Node> nodeList=new ArrayList<Node>();
 	// ===========================================================================================================================================================
 
 	
@@ -72,7 +85,7 @@ public class Heap{
 	 * Initialize the Heap to have only a header Node.
 	 */
 	public Heap(){
-		header=new Node(new City(-1,-1));
+		header=new Node(new City(-1,Integer.MAX_VALUE));
 		header.init(header, header, header);
 		this.last=header;
 	} //Heap
@@ -98,6 +111,8 @@ public class Heap{
 			n.parent.right=n;
 		}
 		this.last=n;
+		nodeList.add(last);
+		siftUp(last);
 		return last;
 	} // addNode
 	// ===========================================================================================================================================================
@@ -112,14 +127,38 @@ public class Heap{
 	 */
 	public City deleteMin(){
 		Node toReturn=this.header.left;
+		// remove the min Node from Heap's list of all nodes
+		nodeList.remove(toReturn);
+		// restructure the Heap
 		Node l=this.last;
-		this.last=findPrev();	
-		l.parent=this.header;
-		this.header.left=l;
-		(l.left=toReturn.left).parent=l;
-		(l.right=toReturn.right).parent=l;
-		this.header.left=l;
-		siftDown(this.header.left);
+		Node secondToLast=findPrev();
+		System.out.println(nodeList);
+		if (nodeList.size()==1){
+			System.out.println("Catching size==2");
+			secondToLast=last;
+		}
+		System.out.println("Min is "+header.left);
+		System.out.println("Last is "+last);
+		System.out.println("new last will be "+secondToLast);
+		if (toReturn==l){
+			header.init(header, header, header);
+		} else {
+			header.init(l, header, header);
+			Node newRight=(toReturn.right==l)?header:toReturn.right;
+			Node newLeft=(toReturn.left==l)?header:toReturn.left;
+			l.init(newLeft, newRight, header);
+			if (toReturn.left!=l && toReturn.left!=header){		
+				toReturn.left.init(toReturn.left.left, toReturn.left.right, l);
+			}
+			if (toReturn.right!=l && toReturn.right!=header){
+				toReturn.right.init(toReturn.right.left, toReturn.right.right, l);
+			}
+			
+			System.out.println("About to siftDown");
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+			siftDown(this.header.left);
+		}
+		this.last=secondToLast;
 		return toReturn.city;
 	} // removeMin
 	// ===========================================================================================================================================================
@@ -191,14 +230,14 @@ public class Heap{
 		if (n.left==header){
 			return;
 		} else {
-			if (n.getName()<n.left.getName() && n.getName()<n.right.getName()){
+			if (n.getDist()<n.left.getDist() && n.getDist()<n.right.getDist()){
 				return;
 			}
-			else if (n.left.getName()<n.right.getName() || n.right==header){
-				swap(n,n.left);
+			else if (n.left.getDist()<n.right.getDist() || n.right==header){
+				swap(n.left,n);
 
 			}else{
-				swap(n,n.right);
+				swap(n.right,n);
 			}
 			siftDown(n);
 		}
@@ -208,8 +247,16 @@ public class Heap{
 
 
 	// ===========================================================================================================================================================
-	public void decreaseKey(Node n){
-		siftUp(n);
+	public void decreaseKey(City c){
+		//TODO: Make this code nice
+		Node t=header.left;
+		for (Node n: nodeList){
+			if (c.getName()==n.getName()){
+				t=n;
+				break;
+			}
+		}
+		siftUp(t);
 	}
 	
 	/**
@@ -217,12 +264,14 @@ public class Heap{
 	 * @param n The Node to swap.
 	 */
 	public void siftUp(Node n){
-		if ((n.parent==null) || n.getName()>n.parent.getName()){
+		if ((n.parent==header) || n.getDist()>n.parent.getDist()){
 			return;
 		} else {
 			swap(n,n.parent);
+			
 			siftUp(n);
 		}
+		header.init(header.left, header, header);
 	} // siftUp
 	// ===========================================================================================================================================================
 
@@ -237,7 +286,45 @@ public class Heap{
 	 * are written, but it would be rigorous.
 	 */
 	public void swap(Node n, Node np){
+		//TODO: use init()
+		if (n==last){
+			last=n.parent;
+		}
+		
+		Node nleft=n.left;
+		Node nright=n.right;
+		Node nparent=n.parent;
+		Node npleft=np.left;
+		Node npright=np.right;
+		Node npparent=np.parent;
+		
 		if (np.left==n){
+			n.init(np, npright, npparent);
+			np.init(nleft, nright, n);
+			if (n.right!=header){
+				n.right.init(n.right.left, n.right.right, n);				
+			}
+		} else {
+			n.init(npleft, np, npparent);
+			np.init(nleft, nright, n);
+			if (n.left!=header){				
+				n.left.init(n.left.left, n.left.right, n);
+			}
+		}
+		if (npparent.left==np){
+			npparent.init(n, npparent.right, npparent.parent);
+		} else{
+			npparent.init(npparent.left, n, npparent.parent);
+		}
+		if (np.left!=header){
+			np.left.init(np.left.left, np.left.right, np);
+		}
+		if (np.right!=header){
+			np.right.init(np.right.left, np.right.right, np);
+		}
+		int i=7;
+		
+		/*if (np.left==n){
 			(np.left=n.left).parent=np;
 
 			n.parent=np.parent;
@@ -267,7 +354,7 @@ public class Heap{
 			Node s=n.left;		
 			(n.left=np.left).parent=n;
 			(np.left=s).parent=np;
-		}
+		}*/
 	} //swap
 	// ===========================================================================================================================================================
 	
@@ -276,6 +363,23 @@ public class Heap{
 
 	public boolean isEmpty(){
 		return header.left==header;
+	}
+	
+	public void print(){
+		if (this.isEmpty()){
+			System.out.println("Empty");
+		} else{
+			print(header.left);
+		}
+	}
+	
+	public void print(Node n){
+		if (n==header){
+			return;
+		}
+		System.out.println(n);
+		print(n.left);
+		print(n.right);
 	}
 } // class Heap
 // ===============================================================================================================================================================

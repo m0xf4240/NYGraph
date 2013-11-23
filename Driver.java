@@ -7,8 +7,6 @@
 
 import java.io.*;
 import java.util.*;
-
-import Heap.Node;
 // ================================================================================================================================================
 public class Driver{
 // ===============================================================================================================================================================
@@ -78,8 +76,17 @@ public class Driver{
 		
 		Integer startCity = 60; 
 		Integer endCity = 71;
-		
+		System.out.println("About to dijkstra.");
 		dijkstra(startCity, endCity, graph, cityList);
+		System.out.println("=========================================================================");
+		for (City c:cityList){
+			System.out.println(c);
+		}
+		
+		//break this into printpath method
+		
+		
+		
 	} // go
 	// ===========================================================================================================================================================
 	
@@ -95,58 +102,53 @@ public class Driver{
 		City startCity = cityList.get(startCityName-1);
 		startCity.setState(0); //mark as enqueued
 		startCity.setDist(0); //set distance to 0
+		System.out.println("startCity: "+startCity);
 		//default via is null
-		Node n=h.addNode(startCity); //enheap
+		h.print();
+		h.addNode(startCity); //enheap
+		h.print();
 		
+		//state: -1,unvisited | 0,enqueued | 1 done
 		while(!h.isEmpty()){
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+			System.out.println("Deleting min:");
 			City v = h.deleteMin();
+			h.print();
+			System.out.println("Done deleting min");
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+			
+			System.out.print("v is "+v);
 			ArrayList<Tuple<Integer, Integer>> neighbors=graph.get(v.getName());
+			System.out.println(" and has " +neighbors.size() +" neighbors");
 			for (Tuple<Integer, Integer> n:neighbors){
+				System.out.println("n is "+n);
+				
 				City w=cityList.get(n.getFirst()-1);
+				System.out.println("w is "+w);
 				if (w.getState() == -1){
 					w.setState(0);
 					w.setDist(v.getDist()+n.getSecond());
 					w.setVia(v);
-					h.addNode(w);
+					h.addNode(w); //enheap
+					System.out.println("Enheaping");
+					h.print();
 				} else if (w.getState() == 0){
 					int newDist=v.getDist()+n.getSecond();
 					if (newDist<w.getDist()){
 						w.setDist(newDist);
 						w.setVia(v);
-/*TODO:fix this*/			h.decreaseKey(w);
+						h.decreaseKey(w);
 					}
 				}
-			}
-		}
-		
-		//state: -1,unvisited | 0,enqueued | 1 done
-		H = new Heap();
-		for all (v){
-			v.state=-1;
-		}
-		v0.state=0;
-		v0.dist=0;
-		v0.via=null;
-		H.enqueue(v0);
-		
-		while(!H.isEmpty()){
-			v=H.deleteMin();
-			for (Node w: v.getNeighbors()){
-				if (w.getState() == -1){
-					w.setState(0);
-					w.setDist(v.getDist()+dist(v,w));
-					w.setVia(v);
-					H.enqueue(w);
-				} else if (w.getState() == 0){
-					int newDist = v.getDist()+dist(v,w);
-					if (newDist < w.getDist()){
-						w.setDist(newDist);
-						w.setVia(v);
-						H.decreaseKey(w);
-					}
-				}
+				System.out.println("w is now "+w);
+				System.out.println("The heap is:");
+				h.print();
+				System.out.println("Done printing heap");
 			}
 			v.setState(1);
+			if (v.getName()==endCityName){
+				break;
+			}
 		}
 	} //dijkstra
 	// ===========================================================================================================================================================
