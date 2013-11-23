@@ -118,6 +118,23 @@ public class Driver{
 				System.out.println(c);
 			}
 		}
+		// ************************
+		// All paths
+		/*
+		for (int i=1; i<cityList.size()+1;i++){
+			for (int j=1; j<cityList.size()+1;j++) {
+				//reset cityList
+				for (City c:cityList){
+					c.reset();
+				}
+				City k=dijkstra(i, j, graph, cityList);
+				printPath(k);
+				System.out.println("*************************");
+			}
+		}
+*/
+		// ************************
+		
 		System.out.println("===============================================================");
 		System.out.println("Enter a starting city or 0 to quit");
 		int startCity = in.nextInt();
@@ -131,7 +148,7 @@ public class Driver{
 		System.out.println("You will enter an ending city. Pressing 0 will not help you.");
 		int endCity = in.nextInt();
 		if(debug){
-			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("trace.txt"))));
+			//System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("trace.txt"))));
 		}
 		while (endCity>cityList.size()){
 			System.out.println("That city number is too large. Try again.");
@@ -143,6 +160,7 @@ public class Driver{
 		}
 
 		while (startCity!=0){
+			System.out.println(startCity+","+endCity);
 			City e=dijkstra(startCity, endCity, graph, cityList);
 
 			if(buildDebug){
@@ -153,6 +171,13 @@ public class Driver{
 			System.out.println("===============================================================");
 			//break this into printpath method
 			printPath(e);
+			
+			//reset cityList
+			for (City c:cityList){
+				c.reset();
+			}
+			
+			
 			System.out.println("Enter a starting city or 0 to quit");
 			startCity = in.nextInt();
 			while (startCity>cityList.size()){
@@ -164,8 +189,18 @@ public class Driver{
 			}
 			System.out.println("You will enter an ending city. Pressing 0 will not help you.");
 			endCity = in.nextInt();
-			while (endCity<=0){
-				System.out.println("I said pressing 0 will not help you. Enter an ending city.");
+			if (endCity==0){
+				//print startCity neighbors
+				System.out.println(graph.get(cityList.get(startCity-1).getName()));
+				
+				System.out.println("Lookup another city's neighbors or press 0 to continue;");
+				int nextCity=in.nextInt();
+				while(nextCity!=0){
+					System.out.println(graph.get(cityList.get(nextCity-1).getName()));
+					System.out.println("Lookup another city's neighbors or press 0 to continue;");
+					nextCity=in.nextInt();
+				}
+				System.out.println("Enter a ending city.");
 				endCity = in.nextInt();
 			}
 		}
@@ -179,9 +214,18 @@ public class Driver{
 	// ===========================================================================================================================================================
 	/**
 	 * Solve the optimization problem using dijkstra's algorithm
+	 * @throws IOException 
 	 */
-	public City dijkstra(int startCityName, int endCityName, HashMap<Integer,ArrayList<Tuple<Integer,Integer>>> graph, ArrayList<City> cityList){
+	public City dijkstra(int startCityName, int endCityName, HashMap<Integer,ArrayList<Tuple<Integer,Integer>>> graph, ArrayList<City> cityList) throws IOException{
 
+		File output = new File("log.txt");
+		if (!output.exists()) {
+			output.createNewFile();
+		}
+		FileWriter fw = new FileWriter(output.getAbsoluteFile());
+		BufferedWriter bw = new BufferedWriter(fw);
+		
+		
 		Heap h= new Heap(debug);
 		City startCity = cityList.get(startCityName-1);
 		startCity.setState(0); //mark as enqueued
@@ -191,6 +235,8 @@ public class Driver{
 
 		//state: -1,unvisited | 0,enqueued | 1 done
 		while(!h.isEmpty()){
+			//h.print();
+			
 			if (debug){
 				System.out.println("Top of the while loop and our heap looks like ");
 				h.print();
@@ -198,12 +244,18 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 
+			bw.write("---------------------------------------------------------------\n");
+			bw.write("The heap is"+h.getCityList()+"\n");
+			
 			City v = h.deleteMin();		
+			bw.write("---------------------------------------------------------------\n");
+			bw.write("Looking at "+v.toString()+"\n");
 			if (debug){
 				System.out.println("Just popped "+v+" off the heap. The heap looks like");
 				h.print();
 			}
 			ArrayList<Tuple<Integer, Integer>> neighbors=graph.get(v.getName());
+			bw.write(neighbors.toString()+"\n");
 			if (debug){
 				System.out.println("City "+v.getName()+" has "+neighbors.size()+" neighbors");
 			}
@@ -220,6 +272,8 @@ public class Driver{
 					w.setState(0);
 					w.setDist(v.getDist()+n.getSecond());
 					w.setVia(v);
+					bw.write("\t---------------------------------------------------------------"+"\n");
+					bw.write("\tAdding "+w.toString()+"\n");
 					if(debug){
 						System.out.println("\tInitialized "+w);
 						try {System.in.read();} catch (IOException e) {e.printStackTrace();}
@@ -237,6 +291,8 @@ public class Driver{
 						w.setVia(v);
 						h.decreaseKey(w);
 					}
+					bw.write("\t---------------------------------------------------------------"+"\n");
+					bw.write("\tUpdating "+w.toString()+"\n");
 				}
 				if(debug){
 					System.out.println("Done with the for loop");
@@ -249,6 +305,8 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 			v.setState(1);
+			bw.write("---------------------------------------------------------------"+"\n");
+			bw.write("Done with "+v.toString()+"\n");
 			if (v.getName()==endCityName){
 				return v;
 			}
@@ -258,6 +316,8 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 		}
+		
+		bw.close();
 		return null;
 	} //dijkstra
 	// ===========================================================================================================================================================

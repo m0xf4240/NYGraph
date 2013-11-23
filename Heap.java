@@ -434,6 +434,14 @@ public class Heap{
 
 
 	// ===
+	
+	public ArrayList<City> getCityList(){
+		ArrayList<City> cityList = new ArrayList<City>();
+		for (Node n: nodeList){
+			cityList.add(n.city);
+		}
+		return cityList;
+	}
 
 	public boolean isEmpty(){
 		return header.left==header;
