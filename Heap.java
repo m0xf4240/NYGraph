@@ -465,5 +465,13 @@ public class Heap{
 		print(n.left);
 		print(n.right);
 	}
+	
+	public boolean validate(){
+		//This will have awful running time
+		
+		
+		
+		return false;
+	}
 } // class Heap
 // ===============================================================================================================================================================
