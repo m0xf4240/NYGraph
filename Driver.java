@@ -16,6 +16,7 @@ public class Driver{
 	boolean buildDebug=false;
 	boolean bwDebugVerbose=false;
 	boolean bwDebugSparse=true;
+	int problemCity=0;
 
 	// ===========================================================================================================================================================
 	// main method switches to a non-static method
@@ -172,6 +173,11 @@ public class Driver{
 			}
 			System.out.println("===============================================================");
 			//break this into printpath method
+			if (e==null){
+				System.out.println("I couldn't find a path. Either there isn't one or something broke.");
+				System.out.println("Force quiting.");
+				return;
+			}
 			printPath(e);
 			
 			//reset cityList
@@ -239,13 +245,27 @@ public class Driver{
 		while(!h.isEmpty()){
 			//h.print();
 			
+			if(!h.validate()){
+				System.out.println("The broken heap is");
+				h.safePrint();
+				System.out.println("The city list is");
+				for (City c:h.getCityList()){
+					System.out.println(c);
+				}
+				System.out.println("Leaving.");
+				bw.close();
+				return null;
+			}
+			
 			if (debug){
 				System.out.println("Top of the while loop and our heap looks like ");
 				h.print();
 				System.out.println("About to deleteMin");
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
-
+			
+			
+			
 			if (bwDebugVerbose){
 				bw.write("---------------------------------------------------------------\n");
 				ArrayList<City> heapList=h.getCityList();
@@ -256,7 +276,12 @@ public class Driver{
 				});
 				bw.write("The heap is"+heapList+"\n");
 			}
-			City v = h.deleteMin();		
+			City d=h.getMin();
+			if (d.getName()==problemCity){
+				h.setDebug(true);
+			}
+			City v = h.deleteMin();
+	
 			if (bwDebugSparse){
 				bw.newLine();
 				bw.write("---------------------------------------------------------------\n");
@@ -267,7 +292,21 @@ public class Driver{
 				h.print();
 			}
 			ArrayList<Tuple<Integer, Integer>> neighbors=graph.get(v.getName());
-			bw.write(neighbors.toString()+"\n");
+			if (v.getName()==problemCity){
+				debug=true;
+				h.setDebug(true);
+			}
+			if(debug){
+				h.safePrint();
+				System.out.println("Neighbors are");
+				for (Tuple<Integer,Integer> t:neighbors){
+					System.out.println(cityList.get(t.getFirst()-1));
+				}
+				
+			}
+			if (bwDebugSparse){
+				bw.write(neighbors.toString()+"\n");
+			}
 			if (debug){
 				System.out.println("City "+v.getName()+" has "+neighbors.size()+" neighbors");
 			}

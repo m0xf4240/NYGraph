@@ -1,5 +1,7 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 //Heap
 public class Heap{
@@ -108,9 +110,16 @@ public class Heap{
 			System.out.println("\t\tAdding "+city);
 		}
 		Node n=new Node(city);
+		if(debug){		
+			System.out.println("\t\tThe heaped nodes are currently");
+			this.safePrint();
+			System.out.println("\t\tThe soonOld heap looks like");
+			this.print();
+			System.out.println("\t\tFindNext returns "+findNext());
+		}
 		n.init(header,header,findNext());
 		if (debug){
-			System.out.println("\t\t"+city+" is now a child of "+n.parent);
+			System.out.println("\t\t"+n+" is now a child of "+n.parent);
 		}
 		if (n.parent.left==header){
 			n.parent.init(n, n.parent.right, n.parent.parent);
@@ -120,6 +129,8 @@ public class Heap{
 		this.last=n;
 		nodeList.add(last);
 		if (debug){
+			System.out.println("\t\tThe heaped nodes are now");
+			this.safePrint();
 			System.out.println("\t\tThe (broken) heap looks like");
 			this.print();
 		}
@@ -132,9 +143,21 @@ public class Heap{
 		return n;
 	} // addNode
 	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================
+	/**
+	 * Get the root of the heap.
+	 * @return City
+	 */
+	public City getMin(){
+		return header.left.city;
+	} //getMin
+	// ===========================================================================================================================================================
 
-
-
+	
+	
 	// ===========================================================================================================================================================
 	/**
 	 * Removes the Node at the top of the Heap, restructures the remaining Nodes into a valid Heap, 
@@ -225,7 +248,7 @@ public class Heap{
 			}
 		}
 		// 
-		if (secondToLast.left==header){ //if secondToLast has no children
+		if (secondToLast.left==header&&secondToLast!=min){ //if secondToLast has no children
 			this.last=secondToLast;
 		}
 		if (debug){
@@ -244,7 +267,7 @@ public class Heap{
 	 * Finds the location for where the next Node should be added.
 	 * @return The parent Node for the location where the next Node should be added.
 	 */
-	public Node findNext(){
+	private Node findNext(){
 		if (last.parent==header){
 			return last;
 		} else if (last.parent.left==last){
@@ -272,7 +295,7 @@ public class Heap{
 	 * Finds the second to last Node in the Heap.
 	 * @return The second to last Node in the Heap.
 	 */
-	public Node findPrev(){
+	private Node findPrev(){
 		if (debug){
 			System.out.println("\t\t\t\t\tFinding thing to call last");
 		}
@@ -317,7 +340,7 @@ public class Heap{
 	 * Swaps a Node with the least of its children until the Heap is valid.
 	 * @param n The Node to swap.
 	 */
-	public void siftDown(Node n){
+	private void siftDown(Node n){
 		if (debug){
 			System.out.println("The (broken) heap looks like ");
 			this.print();
@@ -345,6 +368,10 @@ public class Heap{
 
 
 	// ===========================================================================================================================================================
+	/**
+	 * Public-facing method to update the heap after some City has its distance changed.
+	 * @param c
+	 */
 	public void decreaseKey(City c){
 		//TODO: Make this code nice
 
@@ -362,7 +389,7 @@ public class Heap{
 	 * Swaps a Node with its parent until the Heap is valid.
 	 * @param n The Node to swap.
 	 */
-	public void siftUp(Node n){
+	private void siftUp(Node n){
 		if (debug){
 			System.out.println("\t\t\tSifting up on "+n+"^^"+n.parent);
 			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
@@ -393,7 +420,7 @@ public class Heap{
 	 * TODO: throw an Exception if n.parent!=np. This can't happen because of how siftUp and siftDown
 	 * are written, but it would be rigorous.
 	 */
-	public void swap(Node n, Node np){
+	private void swap(Node n, Node np){
 		if (debug){
 			System.out.println("   about to swap "+n.getName()+" and "+np.getName());
 		}
@@ -436,20 +463,105 @@ public class Heap{
 	// ===========================================================================================================================================================
 
 
-	// ===
 	
+	// ===========================================================================================================================================================
+	/**
+	 * Return a list of every city in the Heap, in no guaranteed order.
+	 * @return ArrayList<City>
+	 */
 	public ArrayList<City> getCityList(){
 		ArrayList<City> cityList = new ArrayList<City>();
 		for (Node n: nodeList){
 			cityList.add(n.city);
 		}
 		return cityList;
-	}
-
+	} // getCityList
+	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================
+	/**
+	 * Returns whether if there are any Cities in the Heap.
+	 * @return True if the Heap is empty.
+	 */
 	public boolean isEmpty(){
 		return header.left==header;
-	}
+	} // isEmpty
+	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================	
+	/**
+	 * Turn the debugging for Heaps on or off/.
+	 * @param debug
+	 */
+	public void setDebug(boolean debug){
+		this.debug=debug;
+	} // setDebug
+	// ===========================================================================================================================================================
+	
 
+
+	// ===========================================================================================================================================================
+	/**
+	 * Run several integrity checks on the Nodes and Cities in the heap.
+	 * @return True if the heap is constructed properly
+	 */
+	public boolean validate(){
+		//not sure why we're not using -1 all the time. too late to fix it.
+		header.city.setDist(-1);
+		for (Node n:nodeList){
+			if (!nodeList.contains(n.parent)&&n.parent!=header){
+				header.city.setDist(Integer.MAX_VALUE);
+				return false;
+			}
+			if (!nodeList.contains(n.left)&&n.left!=header){
+				header.city.setDist(Integer.MAX_VALUE);
+				return false;
+			}	
+			if (!nodeList.contains(n.right)&&n.right!=header){
+				header.city.setDist(Integer.MAX_VALUE);
+				return false;
+			}
+			if(n.city.getVia()!=null && n.city.getVia().getState()!=1){
+				header.city.setDist(Integer.MAX_VALUE);
+				return false;
+			}
+			if (n.getDist()<n.parent.getDist()){
+				header.city.setDist(Integer.MAX_VALUE);
+				return false;
+			}
+		}
+		header.city.setDist(Integer.MAX_VALUE);
+		return true;
+	} //validate
+	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================
+	/**
+	 * Print every node in the heap in a safe way that ignores loops
+	 */
+	public void safePrint(){
+		System.out.println(header);
+		for (Node n:nodeList){
+			if(n==last){
+				System.out.print("*");
+			}
+			System.out.println(n);
+		}
+	} // safePrint
+	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================
+	/**
+	 * Public-facing method to start a pre-order print of the heap.
+	 */
 	public void print(){
 		System.out.println(header);
 		if (this.isEmpty()){
@@ -458,23 +570,24 @@ public class Heap{
 			print(header.left);
 		}
 		System.out.println("*"+last+" is marked as last");
-	}
-
-	public void print(Node n){
+	} // print
+	// ===========================================================================================================================================================
+	
+	
+	
+	// ===========================================================================================================================================================
+	/**
+	 * Private recursive method to print the heap pre-order.
+	 * @param n
+	 */
+	private void print(Node n){
 		if (n==header){
 			return;
 		}
 		System.out.println(n);
 		print(n.left);
 		print(n.right);
-	}
-	
-	public boolean validate(){
-		//This will have awful running time
-		
-		
-		
-		return false;
-	}
+	} // print
+	// ===========================================================================================================================================================
 } // class Heap
 // ===============================================================================================================================================================
