@@ -356,12 +356,29 @@ public class Heap{
 			if (n.getDist()<n.left.getDist() && n.getDist()<n.right.getDist()){
 				return;
 			}
+			else if (n.right==header) {
+				if (n.getDist()<n.left.getDist()) {
+					return;
+				}
+				else {
+					swap(n.left,n);
+				}
+			}
+			else if(n.left.getDist()<n.right.getDist()) {
+				swap(n.left,n);
+			}
+			else{
+				swap(n.right,n);
+			}
+
+/*
 			else if (n.left.getDist()<n.right.getDist() || n.right==header){
 				swap(n.left,n);
 
 			}else{
 				swap(n.right,n);
 			}
+*/
 			siftDown(n);
 			if (debug){
 				System.out.println("      last is "+last);
@@ -527,22 +544,27 @@ public class Heap{
 		for (Node n:nodeList){
 			if (!nodeList.contains(n.parent)&&n.parent!=header){
 				header.city.setDist(Integer.MAX_VALUE);
+				System.out.println(n + "1");
 				return false;
 			}
 			if (!nodeList.contains(n.left)&&n.left!=header){
 				header.city.setDist(Integer.MAX_VALUE);
+				System.out.println(n.left + "2");
 				return false;
 			}	
 			if (!nodeList.contains(n.right)&&n.right!=header){
 				header.city.setDist(Integer.MAX_VALUE);
+				System.out.println(n.right + "3");
 				return false;
 			}
 			if(n.city.getVia()!=null && n.city.getVia().getState()!=1){
 				header.city.setDist(Integer.MAX_VALUE);
+				System.out.println(n + "4");
 				return false;
 			}
 			if (n.getDist()<n.parent.getDist()){
 				header.city.setDist(Integer.MAX_VALUE);
+				System.out.println(n.getDist() + " 5 " + n.parent.getDist());
 				return false;
 			}
 		}

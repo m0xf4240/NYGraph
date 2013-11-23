@@ -12,7 +12,7 @@ import java.util.*;
 public class Driver{
 	// ===============================================================================================================================================================
 
-	boolean debug=true;
+	boolean debug=false;
 	boolean buildDebug=false;
 	boolean bwDebugVerbose=false;
 	boolean bwDebugSparse=true;
@@ -109,7 +109,8 @@ public class Driver{
 		for (Integer i:graph.keySet()){
 			cityList.add(new City(i,Integer.MAX_VALUE));
 			City a = cityList.get(cityList.size()-1);
-			a.setStateFromEnd(Integer.MAX_VALUE);
+			a.setDistFromEnd(Integer.MAX_VALUE);
+			a.setStateFromEnd(-1);
 		}
 
 		Collections.sort(cityList, new Comparator<City>() {
@@ -165,8 +166,13 @@ public class Driver{
 		}
 
 		while (startCity!=0){
-			System.out.println(startCity+","+endCity);
+			if(debug){			
+				System.out.println(startCity+","+endCity);
+			}
 			City e=dijkstra(startCity, endCity, graph, cityList);
+			if(debug){
+				System.out.println(e+" is holding the path!!");
+			}
 
 			if(buildDebug){
 				for (City c:cityList){
@@ -180,12 +186,14 @@ public class Driver{
 				System.out.println("Force quiting.");
 				return;
 			}
-			postPrintPath(e);
-			prePrintPath(e);
-			
-			for (City c:cityList){
-				System.out.println(c);
-			}			
+
+			int opPath=e.getDist()+e.getDistFromEnd();
+			System.out.println("Here's the optimum path length: "+opPath);
+
+			postPrintPath(e.getVia());		// print from start to e
+			System.out.println("*"+e.toString()+" this was the middle node"); 
+			prePrintPath(e.getViaFromEnd());		// from e to end
+						
 			
 			//reset cityList
 			for (City c:cityList){
@@ -243,15 +251,15 @@ public class Driver{
 			System.out.println("Adding startCity");
 		}
 		City startCity = cityList.get(startCityName-1);
-		startCity.setState(0); //mark as enqueued
+		startCity.setState(0); //mark as enqueued from start
 		startCity.setDist(0); //set distance to 0
 		//default via is null
+		h.addNode(startCity); //enheap
 		if(debug){
 			System.out.println("Adding endCity");
 		}
-		h.addNode(startCity); //enheap
 		City endCity = cityList.get(endCityName-1);
-		endCity.setStateFromEnd(0);
+		endCity.setStateFromEnd(0); //mark as enqueued from end
 		endCity.setDistFromEnd(0); //set distance to 0
 		//default via is null
 		h.addNode(endCity); //enheap
@@ -277,17 +285,17 @@ public class Driver{
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 			}
 			
-			City d=h.getMin();
+			City d=h.getMin();		
 			if (d.getName()==problemCity){
 				h.setDebug(true);
 			}
-			City v = h.deleteMin();
-			String dir=v.whichWay();
+			City v = h.deleteMin();		// min in terms of sorting - min distance from any end
+			String dir=v.whichWay();	// which end?
 			if (debug){
 				System.out.println("Just popped "+v+" off the heap. The heap looks like");
 				h.print();
 			}
-			ArrayList<Tuple<Integer, Integer>> neighbors=graph.get(v.getName());
+			ArrayList<Tuple<Integer, Integer>> neighbors=graph.get(v.getName()); // get neighbor list
 			if (v.getName()==problemCity){
 				debug=true;
 				h.setDebug(true);
@@ -301,27 +309,27 @@ public class Driver{
 				System.out.println("City "+v.getName()+" has "+neighbors.size()+" neighbors");
 			}
 
-			for (Tuple<Integer, Integer> n:neighbors){
+			for (Tuple<Integer, Integer> n:neighbors){			//for each neighbor
 				City w=cityList.get(n.getFirst()-1);
 				if (debug){
 					try {System.in.read();} catch (IOException e) {e.printStackTrace();}
 					System.out.println("\tLooking at neighbor "+w+" in direction "+dir);
 					System.out.println("\tv is "+v);
 				}
-				if (dir.equals("start")){
-					if (w.getState()==-1){
-						w.setState(0);
-						w.setDist(v.getDist()+n.getSecond());
-						w.setVia(v);
-						if (!h.contains(w)){
-							h.addNode(w); //enheap
-						} else {
-							h.decreaseKey(w);
+				if (dir.equals("start")){						// if we popped from the start
+					if (w.getState()==-1){							// and the neighbor is unvisited from the start
+						w.setState(0);									// enheap from the start
+						w.setDist(v.getDist()+n.getSecond());			// with a distance of popped.getDist(front) + dist(popped,neighbor)
+						w.setVia(v);									// front via = popped
+						if (!h.contains(w)){							// if is not visited from end either
+							h.addNode(w); //enheap							// add to heap
+						} else {										// otherwise
+							h.decreaseKey(w);								// tell heap that dist(front) has changed
 						}
-					} else if (w.getState() == 0){
-						int newDist=v.getDist()+n.getSecond();
-						if (newDist<w.getDist()){
-							w.setDist(newDist);
+					} else if (w.getState() == 0){					// if we popped from the start and the neighbor is enqueued from start already
+						int newDist=v.getDist()+n.getSecond();			// make new distance(front) of popped.getDist(front) + dist(popped,neighbor)
+						if (newDist<w.getDist()){						// if dist(front) has decreased
+							w.setDist(newDist);								//update the via and distance and tell heap that dist(front) has changed
 							w.setVia(v);
 							h.decreaseKey(w);
 						}
@@ -355,14 +363,14 @@ public class Driver{
 			if(debug){
 				System.out.println("Setting v="+v.getName()+" to done");
 				try {System.in.read();} catch (IOException e) {e.printStackTrace();}
-			}
-			if (dir.equals("start")){
-				v.setState(1);
-				if (v.getStateFromEnd()==0){
-					h.addNode(v);
+			}									// for v
+			if (dir.equals("start")){				// if we popped from start
+				v.setState(1);						// set state(front) to done
+				if (v.getStateFromEnd()==0){		// if v still needs to be enheaped from end
+					h.addNode(v);						// add it back in
 				}
-				if (v.getStateFromEnd()==1){
-					return search(h,v);
+				if (v.getStateFromEnd()==1){		// if v is done from both ends
+					return search(h,v);					// do search for optimal path between v, and the nodes in the heap that are complete from one end and enheaped from the other
 				}
 			} else {
 				v.setStateFromEnd(1);
@@ -384,25 +392,43 @@ public class Driver{
 		return null;
 	}
 	
-	public City search(Heap h, City v){
-		ArrayList<City> cityList=h.getCityList();
-		for (City c:cityList){
+	public City search(Heap h, City v){								// optimal path between v, and the nodes in the heap that are complete from one end and enheaped from the other
+		ArrayList<City> cityList=h.getCityList();					// we want to remove all nodes from list that aren't complete from one end and enheaped from the other
+		ArrayList<City> cList=h.getCityList();
+		if (debug){
+			System.out.println("Inside Search, v found is "+v+" cityList is ");
+			System.out.println(cityList);
+			try {System.in.read();} catch (IOException e) {e.printStackTrace();}
+		}
+		for (City c:cList){
 			if (c.getState()==-1 || c.getStateFromEnd()==-1){
 				cityList.remove(c);
 			} else if (c.getState()==0 && c.getStateFromEnd()==0){
 				cityList.remove(c);
 			}
 		}
-		for (City c:cityList){
+		for (City c:cityList){										// for each node that is complete from one end and enheaped from the other
 			if ((c.getDist()+c.getDistFromEnd())<(v.getDist()+v.getDistFromEnd())){
-				v=c;
+				v=c;												// if it's the least distance so far, keep it
 			}
 		}
 		return v;
 	}
 	
 	
-	public void prePrintPath(City e){
+	public void postPrintPath(City e){		// print path from start up to e
+		if (e.getVia() == null){
+			System.out.println(e);
+			return;
+		}
+		postPrintPath(e.getVia());
+		
+			System.out.println(e);
+		
+	}
+
+
+	public void prePrintPath(City e){		// print path from e to end
 		if (e.getViaFromEnd() == null){
 			System.out.println(e);
 			return;
@@ -411,15 +437,6 @@ public class Driver{
 		prePrintPath(e.getViaFromEnd());
 	}
 	
-	public void postPrintPath(City e){
-		if (e.getVia() == null){
-			System.out.println(e);
-			return;
-		}
-		postPrintPath(e.getVia());
-		System.out.println(e);
-	}
-
 
 	/**
 	 * Print each Node in a graph and all of its neighbors.
