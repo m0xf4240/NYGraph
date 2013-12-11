@@ -17,6 +17,7 @@ public class Driver{
 	boolean bwDebugVerbose=false;
 	boolean bwDebugSparse=true;
 	int problemCity=0;
+	long enqueuedCount=2;
 
 	// ===========================================================================================================================================================
 	// main method switches to a non-static method
@@ -194,7 +195,9 @@ public class Driver{
 			System.out.println("*"+e.toString()+" this was the middle node"); 
 			prePrintPath(e.getViaFromEnd());		// from e to end
 						
-			System.out.println("Here's the optimum path length: "+opPath);			
+			System.out.println("Here's the optimum path length: "+opPath);
+			System.out.println(enqueuedCount + " nodes enqueued");
+			enqueuedCount =2;
 
 			//reset cityList
 			for (City c:cityList){
@@ -320,6 +323,7 @@ public class Driver{
 				if (dir.equals("start")){						// if we popped from the start
 					if (w.getState()==-1){							// and the neighbor is unvisited from the start
 						w.setState(0);									// enheap from the start
+						enqueuedCount++;
 						w.setDist(v.getDist()+n.getSecond());			// with a distance of popped.getDist(front) + dist(popped,neighbor)
 						w.setVia(v);									// front via = popped
 						if (!h.contains(w)){							// if is not visited from end either
@@ -338,6 +342,7 @@ public class Driver{
 				} else {
 					if (w.getStateFromEnd()==-1 && v.getStateFromEnd()==0){
 						w.setStateFromEnd(0);
+						enqueuedCount++;
 						w.setDistFromEnd(v.getDistFromEnd()+n.getSecond());
 						w.setViaFromEnd(v);
 						if (!h.contains(w)){
