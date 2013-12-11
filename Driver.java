@@ -17,6 +17,7 @@ public class Driver{
 	boolean bwDebugVerbose=false;
 	boolean bwDebugSparse=true;
 	int problemCity=0;
+	int enqueuedCount = 1; // the 1 is startCity
 
 	// ===========================================================================================================================================================
 	// main method switches to a non-static method
@@ -179,6 +180,8 @@ public class Driver{
 				return;
 			}
 			printPath(e);
+			System.out.println(enqueuedCount + " nodes enqueued");
+			enqueuedCount=1;
 			
 			//reset cityList
 			for (City c:cityList){
@@ -321,6 +324,7 @@ public class Driver{
 						System.out.println("\tAbout to add "+w+" to heap");
 					}
 					w.setState(0);
+					enqueuedCount++;
 					w.setDist(v.getDist()+n.getSecond());
 					w.setVia(v);
 					if (bwDebugSparse){
