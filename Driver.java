@@ -194,7 +194,8 @@ public class Driver{
 			System.out.println("*"+e.toString()+" this was the middle node"); 
 			prePrintPath(e.getViaFromEnd());		// from e to end
 						
-			
+			System.out.println("Here's the optimum path length: "+opPath);			
+
 			//reset cityList
 			for (City c:cityList){
 				c.reset();
